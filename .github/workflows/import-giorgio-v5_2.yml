@@ -36,7 +36,15 @@ jobs:
           SRC="/tmp/giorgio-v52/GiorgioCodex_v5_bridge_integration"
           test -d "$SRC/core"
           test -d "$SRC/tests"
-          rsync -a --delete-excluded             --exclude='__pycache__/'             --exclude='*.pyc'             --exclude='.pytest_cache/'             --exclude='checkpoints/'             "$SRC/" ./
+          # Preserve repository metadata: candidate source must never overwrite .git.
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='.pytest_cache/' \
+            --exclude='checkpoints/' \
+            "$SRC/" ./
+          git rev-parse --is-inside-work-tree
 
       - name: Record provenance
         shell: bash
