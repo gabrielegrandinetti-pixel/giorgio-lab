@@ -1,0 +1,8 @@
+{
+  "test_id": "GITHUB-TEAM-E2E-001",
+  "purpose": "Verify that Giorgio's shared GitHub repository supports a real write -> read -> evidence cycle.",
+  "repository": "gabrielegrandinetti-pixel/giorgio-lab",
+  "branch": "main",
+  "expected": "This exact marker must be readable back from GitHub after commit.",
+  "status": "PENDING_READBACK"
+}
