@@ -1,0 +1,3 @@
+ollama>=0.4,<1
+pypdf>=5,<7
+tkinterdnd2>=0.4,<1

@@ -1,0 +1,138 @@
+GIORGIO CODEX - INTERFACCIA SCURA INTEGRATA (aggiornamento 5 ottobre 2026)
+
+AVVIO WINDOWS
+Estrai tutto in una nuova cartella, senza sovrascrivere la versione sul PC.
+Esegui Installa_Dipendenze.bat, avvia Ollama e apri Avvia_Giorgio.bat.
+Il modello iniziale e qwen2.5-coder:7b: se usi un altro modello gia installato,
+selezionalo in Impostazioni. Non serve una chiave API per Ollama locale.
+
+COSA CAMBIA
+La veste scura/viola, con scelta progetto arancione, e integrata nell'app reale.
+Il layout e ispirato alla bozza scura, non una copia pixel per pixel.
+Elenco reale dei file (doppio clic per anteprima di testo in sola lettura),
+registro attivita visibile, esportazione chat e modalita Chat / Agente / Studio.
+Chat: risposta breve. Studio: spiegazioni a passi ed esempi.
+Solo Agente legge automaticamente il progetto e propone modifiche.
+Chat e Studio usano gli allegati, non leggono automaticamente la cartella.
+
+LUNGHEZZA RISPOSTE (NUOVO)
+Accanto alla modalita puoi scegliere Breve, Normale o Dettagliata.
+Breve e il valore iniziale e punta a risposte essenziali, di norma entro
+80 parole. Normale usa un limite intermedio; in Studio lascia piu spazio agli
+esempi. Dettagliata permette spiegazioni complete quando servono. La scelta
+viene salvata nelle impostazioni e ogni incarico in coda conserva il profilo
+selezionato al momento dell'inserimento.
+
+PRIMA PROVA, SENZA MODELLO
+Scegli una cartella di prova e premi Prova scrittura verificata.
+Crea test_giorgio.txt, lo rilegge e verifica i byte. Non sovrascrive un file
+omonimo. Ripristina correzione annulla la creazione, dopo conferma.
+
+MODIFICHE AI PROGETTI
+Scegli la cartella effettiva del progetto. Chiedi una modifica in modo Agente.
+Vedi modifiche mostra il confronto, Applica modifiche salva con backup.
+Ogni file salvato viene riletto e confrontato con il contenuto previsto.
+Se la rilettura non coincide, viene tentato il rollback dal backup.
+La sintassi Python e controllata prima della scrittura. Questo controllo
+non equivale a un test funzionale del programma modificato.
+Rifiuta scarta la proposta. Ripristina correzione annulla l'ultima applicazione
+nella sessione, bloccando il ripristino se il file e cambiato nel frattempo.
+
+CODA
+Scrivi una richiesta e premi Metti in coda. Il lavoro conserva progetto,
+modello, modo e allegati selezionati al momento dell'inserimento.
+Avvia prossimo esegue un incarico alla volta. Una proposta di modifica
+pendente va applicata o rifiutata prima di procedere.
+Gestisci coda apre un pannello con l'elenco degli incarichi. Da qui puoi
+spostare una richiesta su o giu, rimuoverla, correggere testo, modalita,
+modello e lunghezza della risposta oppure avviare l'elemento selezionato.
+L'avvio lo porta in testa
+senza cambiare l'ordine relativo degli altri incarichi. Durante un lavoro la
+coda resta consultabile, ma le modifiche sono bloccate per evitare conflitti.
+La coda viene salvata e recuperata alla riapertura; non parte automaticamente.
+La conversazione dei lavori in coda parte senza storico per evitare
+contaminazioni tra incarichi. I file allegati sono letti al momento dell'avvio.
+
+BLOCCHI DI CODICE E COPIA (NUOVO)
+Le risposte che usano blocchi Markdown con tre accenti vengono formattate
+alla fine dello streaming con carattere monospazio, sfondo distinto, nome
+del linguaggio e pulsante Copia. Il testo continua ad apparire subito mentre
+il modello genera. Copia inserisce negli appunti solo il codice, senza i tre
+accenti o il nome del linguaggio, e cambia etichetta in Copiato.
+I blocchi incompleti restano testo normale, quindi una risposta interrotta
+non perde contenuto. Sono gestiti fino a 40 blocchi e 200.000 caratteri per
+blocco; oltre i limiti il Markdown resta visibile come testo. L'esportazione
+mantiene i delimitatori Markdown. La sessione salva il testo originale:
+alla riapertura ricrea formattazione e pulsanti anche senza chiamare Ollama.
+
+CONTROLLO OLLAMA E MODELLI (NUOVO)
+All'avvio Giorgio controlla Ollama in sottofondo: la finestra non si blocca.
+Lo stato distingue Ollama pronto, modello scelto non installato, installazione
+senza modelli e server irraggiungibile. Il controllo si ripete ogni minuto
+e puo essere richiesto con Controlla Ollama. Se Giorgio sta lavorando, il
+risultato del controllo non sostituisce il messaggio di avanzamento.
+Impostazioni mostra i modelli rilevati e permette di scegliere quello da usare.
+Il nome puo ancora essere scritto manualmente, per esempio prima di installarlo.
+Dopo il cambio Giorgio ricontrolla il nuovo modello. Gli errori tecnici completi
+vanno nel registro; la barra principale mostra un messaggio comprensibile.
+Il controllo usa un timeout di 4 secondi. Il thread e daemon: alla chiusura
+non trattiene l'applicazione. La generazione conserva i propri timeout.
+
+RECUPERO SESSIONE (NUOVO)
+Chat, bozza, modalita, progetto selezionato, allegati e coda vengono salvati
+automaticamente dopo circa 750 ms e alla chiusura normale. Il file session.json
+e nella cartella delle impostazioni: %APPDATA%\GiorgioCodex su Windows.
+Il salvataggio usa sostituzione atomica: un errore lascia intatto il file
+precedente. Un JSON corrotto viene conservato con suffisso .invalid-...
+e la nuova sessione parte vuota. Se non e possibile conservarlo, il
+salvataggio automatico viene disattivato per evitare di sovrascriverlo.
+I dati sono locali e in chiaro: non inserire password nella conversazione.
+Viene conservata una sessione attiva: Nuova conversazione la sostituisce.
+Limiti: bozza/richiesta 20.000 caratteri, 100 incarichi in attesa, ultime
+40 voci di storico (fino a 40.000 caratteri ciascuna), ultimi 250.000
+caratteri visibili di chat e 80 righe di registro, massimo 4 MB di JSON.
+Una coda recuperata puo includere un ulteriore lavoro interrotto.
+Le proposte di modifica e il pulsante di annullamento non vengono recuperati:
+le modifiche devono essere richieste nuovamente; i backup su disco restano.
+Un lavoro presente durante una chiusura anomala torna in testa alla coda,
+ma va riavviato manualmente e riparte dall'inizio. Stop o chiusura normale
+annullano il lavoro in corso invece di rimetterlo in coda.
+Se il progetto non e disponibile, gli incarichi restano in attesa e
+lo storico non viene usato come contesto su un progetto diverso.
+Avvia prossimo conserva la bozza corrente. Un errore di avvio mantiene
+l'incarico in coda, conserva modalita e cronologia precedenti e non inserisce
+in chat una richiesta che non e realmente partita. Anche l'invio diretto
+mantiene il testo nell'area di scrittura se il worker non si avvia.
+Registro attivita segnala errori di salvataggio.
+
+STOP
+Invia diventa Stop durante il lavoro. Esc interrompe il worker.
+Stop non garantisce l'arresto immediato del calcolo nel server Ollama.
+L'applicazione dei file e una breve transazione locale non interrompibile.
+
+ALLEGATI
+Testo, codice, CSV, PDF con testo e Word, fino a 20 file.
+Immagini/OCR ed Excel non sono ancora supportati.
+Trascinamento disponibile se tkinterdnd2 e installato.
+
+VERIFICA DI QUESTA VERSIONE
+58 test automatici non grafici passati; 21 test GUI presenti nella suite.
+In questa verifica il display virtuale non ha potuto aprire il socket locale,
+quindi i test GUI sono stati esclusi automaticamente. I 15 test GUI precedenti
+erano passati sulla stessa base; i 6 test GUI successivi restano da eseguire
+su display disponibile. Compilazione Python dei file modificati verificata.
+Verificati recupero sessione, salvataggio fallito, file corrotto, coda,
+cartella mancante e avvio worker fallito. Le risposte nel test GUI sono simulate.
+Avvio Tkinter verificato su display virtuale Linux, inclusi creazione,
+rilettura, rifiuto duplicati, ripristino, coda e ridimensionamento.
+Ollama e l'avvio nativo Windows richiedono ancora la prova sul tuo PC.
+L'immagine di riferimento includeva funzioni che questo motore non ha
+(provider cloud e ricerca web): non sono state aggiunte come pulsanti finti.
+
+CORREZIONE ACTION LOOP MKDIR (6 ottobre 2026)
+Il ponte tra piano dell'Agente ed executor ora conserva anche per MKDIR lo
+snapshot di assenza della destinazione richiesto dall'esecuzione verificata.
+Un test d'integrazione attraversa worker, piano, snapshot e apply_approved e
+verifica la directory realmente creata. 61 test non grafici passano.
+Resta obbligatoria la prova nativa Windows/Ollama della frase naturale: questo
+aggiornamento non dichiara verificato il parsing del modello ne la GUI Windows.

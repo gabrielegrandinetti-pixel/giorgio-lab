@@ -1,0 +1,63 @@
+Punto di ripartenza: ponte Agente -> executor corretto per MKDIR, 6 ottobre 2026.
+Base mantenuta: interfaccia scura, Chat/Agente/Studio, file e anteprima,
+registro, export, coda/sessione persistenti, controllo Ollama/modelli,
+backup, verifica byte e rollback. Limiti risposta Chat 600/Studio 900 token.
+
+ULTIMO INTERVENTO
+Corretto un difetto reale nel percorso operativo delle creazioni di cartelle.
+Il Core sapeva gia eseguire e verificare MKDIR, ma app_worker non inseriva
+le operazioni mkdir nello snapshot expected. Di conseguenza una cartella
+proposta dall'agente poteva arrivare alla UI senza la prova di stato richiesta
+da apply_approved e fallire al momento dell'applicazione.
+Ora CREATE e MKDIR registrano entrambe expected[path] = None soltanto dopo
+aver verificato che la destinazione non esista.
+
+VERIFICA
+Aggiunto test d'integrazione del ponte Agente -> piano MKDIR -> snapshot ->
+apply_approved -> verifica fisica della directory. Il test crea realmente una
+cartella temporanea Stefano/Gabriele e richiede che is_dir() sia vero.
+61 test non grafici passati, incluso il nuovo test d'integrazione.
+La suite completa contiene test GUI che in questo ambiente falliscono per
+assenza di display Tk; non sono conteggiati come regressioni del Core.
+Nessuna prova nativa Windows/Ollama: il parsing della frase naturale resta
+quindi da verificare nell'app reale con il modello scelto.
+
+PROSSIMO INTERVENTO PRIORITARIO
+Costruire un Action Harness indipendente dalla UI che misuri separatamente
+INTENT, TOOL, ARGUMENTS, EXECUTION e VERIFY su richieste pratiche variate.
+Prima prova Windows: dalla chat Agente chiedere una MKDIR con nomi e percorso
+nuovi, applicarla e controllare che la cartella fisica compaia. Non promuovere
+nuove funzioni finche il percorso operativo fondamentale non e affidabile.
+
+2026-10-06 - P0 Action routing increment
+- Esteso il riconoscimento deterministico delle richieste operative: rinomina, sposta/muovi, cancella/elimina/rimuovi, copia, scrivi/salva/sostituisci, installa oltre ai verbi gia supportati.
+- Aggiunti test di regressione per 12 comandi workspace e 4 domande read-only.
+- Verifica locale: 63/63 test non-GUI PASS; 3/3 test mirati routing+mkdir PASS; py_compile PASS.
+- Non verificati in questo ambiente: UI grafica Windows e integrazione con Ollama reale.
+
+CHECKPOINT P0 ACTION LOOP - NATURAL CREATE FILE
+- Aggiunta interpretazione deterministica ad alta confidenza per creazione di file vuoti da linguaggio naturale.
+- Nessun contenuto viene inventato: il bypass LLM scatta solo con nome file esplicito e estensione valida.
+- Supportate formulazioni variate e cartella padre opzionale; path traversal/nomi ambigui fanno fallback.
+- Action Harness: 70/70 PASS. Metriche nuove E2E: INTENT 4/4, TOOL 4/4, ARGUMENTS 4/4, EXECUTION 4/4, VERIFY 4/4.
+- Test mirati natural actions: 7/7 PASS. Suite non-GUI: PASS. py_compile: PASS.
+- Suite completa: 63 test eseguibili PASS + 21 errori UI dovuti esclusivamente all'assenza di display Tkinter in questo ambiente.
+- Resta da verificare nativamente su Windows: UI -> worker -> conferma/apply e integrazione con Ollama nei casi che fanno fallback al planner.
+
+CHECKPOINT P0 ACTION LOOP - UNSAFE PARENT GUARD
+- Corretto un bug reale nell'estrazione argomenti: se una richiesta indicava esplicitamente un parent non sicuro come `.` o `..`, il parser poteva scartare il parent invalido e degradare silenziosamente l'azione nel project root.
+- Ora CREATE FILE e MKDIR fanno fallback/rifiuto quando un parent esplicito non supera `_clean_component`; nessuna destinazione alternativa viene inventata.
+- Action Harness esteso con 4 casi avversariali e path/nome variati: 198/198 PASS.
+- Metriche Harness: INTENT 66/66; TOOL 22/22; ARGUMENTS 26/26; PERMISSION 22/22; EXECUTION 26/26; VERIFY 26/26; VERIFIED legacy executor 10/10.
+- 8/8 file di test non-GUI PASS eseguiti separatamente; compileall PASS.
+- Suite completa: i 21 test UI restano non eseguibili in questo ambiente per assenza display Tkinter, non considerati regressioni Core.
+- Resta da verificare nativamente su Windows: UI -> worker -> apply per parent/path reali e comportamento Ollama nei casi che fanno fallback al planner.
+
+P0 checkpoint 2026-10-06 - natural exact MODIFY_FILE
+- Aggiunta interpretazione deterministica di richieste naturali di sostituzione testuale esplicita/univoca.
+- Zero o piu di una corrispondenza: nessuna modifica automatica.
+- Executor gia usa temp file nella stessa directory, flush+fsync, os.replace, rilettura/verifica e BackupManager per rollback.
+- Action Harness: 228/228 PASS (INTENT 71/71, TOOL 27/27, ARGUMENTS 31/31, PERMISSION 27/27, EXECUTION 31/31, VERIFY 31/31, baseline VERIFIED 10/10).
+- Natural action tests: 14/14 PASS.
+- Full suite: 63 non-GUI PASS; 21 GUI non eseguibili nel container per assenza display Tk (:0).
+- Non verificato: Windows UI end-to-end, Ollama/Groq argument extraction/fallback, crash/power-loss reale durante os.replace/fsync.
