@@ -1,0 +1,33 @@
+{
+  "event_id": "MIGRATION-V5.2-DEVELOPER-001",
+  "from_agent_id": "giorgio-developer",
+  "requested_by_agent_id": "giorgio-controllore",
+  "requested_by_code": "GC-INDEPENDENT-VERIFIER",
+  "task_id": "BLOCKED_MIGRATION",
+  "candidate": "v5.2_decoupled_supervisor",
+  "status": "PASS_TEST",
+  "verified": false,
+  "stable": false,
+  "source_archive": "GiorgioCodex_cloud_candidate_v5.2_decoupled_supervisor.zip",
+  "source_archive_sha256": "ced5dd91acdb2d00e20bdfffb49cc671ac9f0dd41f45470491f9d8749b4eb56c",
+  "starting_main_sha": "1906e18fe2234beb445a98b64b9f784a680fa9e1",
+  "importer_fix_sha": "ed4340d4aab010072af64a171dd58dc2f23252cf",
+  "migration_commit_sha": "f1cba48e46c99b4cf5521af37ed43d213970cf17",
+  "migration_parent_sha": "ed4340d4aab010072af64a171dd58dc2f23252cf",
+  "workflow": {
+    "run_id": 37545118926,
+    "run_number": 2,
+    "conclusion": "success"
+  },
+  "evidence": {
+    "imported_files": 69,
+    "readback": [
+      "core/transaction_supervisor.py",
+      "tests/acceptance/test_isolation_kernel.py",
+      "CANDIDATE_PROVENANCE.md"
+    ],
+    "core_blob_sha": "79ce0eac68deb529279dce9c117b36f1f07b762a",
+    "isolation_test_blob_sha": "d022811f6a173b79423f4da97d0f9413051dd6f9"
+  },
+  "note": "Migration only. Candidate behavior intentionally unchanged. Independent gate rerun required; not VERIFIED."
+}
