@@ -1,0 +1,65 @@
+name: Import Giorgio v5.2 source
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/import-giorgio-v5_2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify candidate SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="GiorgioCodex_cloud_candidate_v5.2_decoupled_supervisor.zip"
+          EXPECTED="ced5dd91acdb2d00e20bdfffb49cc671ac9f0dd41f45470491f9d8749b4eb56c"
+          ACTUAL="$(sha256sum "$FILE" | awk '{print $1}')"
+          echo "candidate_sha256=$ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+
+      - name: Extract operational source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/giorgio-v52
+          mkdir -p /tmp/giorgio-v52
+          unzip -q "GiorgioCodex_cloud_candidate_v5.2_decoupled_supervisor.zip" -d /tmp/giorgio-v52
+          SRC="/tmp/giorgio-v52/GiorgioCodex_v5_bridge_integration"
+          test -d "$SRC/core"
+          test -d "$SRC/tests"
+          rsync -a --delete-excluded             --exclude='__pycache__/'             --exclude='*.pyc'             --exclude='.pytest_cache/'             --exclude='checkpoints/'             "$SRC/" ./
+
+      - name: Record provenance
+        shell: bash
+        run: |
+          cat > CANDIDATE_PROVENANCE.md <<'EOF'
+          # Candidate provenance
+          Source: GiorgioCodex_cloud_candidate_v5.2_decoupled_supervisor.zip
+          Version: v5.2_decoupled_supervisor
+          SHA-256: ced5dd91acdb2d00e20bdfffb49cc671ac9f0dd41f45470491f9d8749b4eb56c
+          Status: imported operational source; not VERIFIED; not STABLE.
+          Generated caches and historical checkpoints are intentionally excluded from the live source tree.
+          EOF
+
+      - name: Commit imported source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "giorgio-lab-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Import Giorgio Codex v5.2 operational source"
+          git push
