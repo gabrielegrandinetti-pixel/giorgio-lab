@@ -3,6 +3,8 @@
   "purpose": "Verify that Giorgio's shared GitHub repository supports a real write -> read -> evidence cycle.",
   "repository": "gabrielegrandinetti-pixel/giorgio-lab",
   "branch": "main",
-  "expected": "This exact marker must be readable back from GitHub after commit.",
-  "status": "PENDING_READBACK"
+  "write_commit": "ae1d85f70cc85371f4b1210f410e469365e59c11",
+  "readback_blob_sha": "ec84cd99fcc3226c12a45819e5bd3aa71f3c5062",
+  "result": "PASS",
+  "evidence": "Marker committed to main and independently fetched back from GitHub with exact expected content."
 }
