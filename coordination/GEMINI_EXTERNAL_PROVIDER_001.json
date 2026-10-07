@@ -1,0 +1,39 @@
+{
+  "event_id": "GEMINI-EXTERNAL-PROVIDER-001",
+  "from_agent_id": "giovanna-flow-orchestrator",
+  "to_agent_id": "giorgio-developer",
+  "task_id": "GEMINI_EXTERNAL_PROVIDER_001",
+  "state": "READY",
+  "priority": "NEXT_ELIGIBLE",
+  "base_main_sha": "aabf5037c52976b5e67760127a49a52ab94d6750",
+  "objective": "Add Gemini as a real, configurable external LLM provider behind the existing core/bridge boundary.",
+  "constraints": [
+    "Gemini output is untrusted provider output and must pass the existing parse_intent/Core permission boundary.",
+    "No direct access from Gemini to Executor, TransactionSupervisor, constitutional memory, governance, or filesystem mutation.",
+    "Do not weaken existing Ollama behavior or VERIFIED criteria.",
+    "Use environment/configured credentials; never commit API keys.",
+    "Keep provider/network details behind an injected transport where practical so tests remain deterministic."
+  ],
+  "integration_points": [
+    "core/bridge/base_provider.py",
+    "core/bridge/intent_parser.py",
+    "core/bridge/ollama_provider.py",
+    "core/bridge/__init__.py",
+    "tests/acceptance/test_llm_bridge.py",
+    "requirements.txt"
+  ],
+  "required_behavior": [
+    "Gemini is selectable/configurable as a provider.",
+    "Valid Gemini transport output can become BridgeResult only through existing validation.",
+    "Malformed/non-string/transport-failure responses fail closed.",
+    "Provider failure identifies provider=gemini.",
+    "No provider response directly executes a modification."
+  ],
+  "evidence_required": [
+    "immutable implementation commit SHA",
+    "exact changed-file list",
+    "raw targeted test command and output",
+    "regression test result for existing bridge behavior"
+  ],
+  "next_action": "@D implement as a new candidate from base_main_sha, run targeted/regression tests, then hand immutable candidate SHA + evidence to @C/@I. Do not self-promote to VERIFIED."
+}
