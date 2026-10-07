@@ -1,0 +1,101 @@
+name: Casa Giorgio E2E
+
+on:
+  push:
+    branches: [casa-giorgio-v1-5]
+    paths:
+      - "sandbox/**"
+      - "tests/test_casa_giorgio.py"
+      - ".github/workflows/casa-giorgio-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  casa-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Casa candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Unit contracts
+        run: python -m pytest -q tests/test_casa_giorgio.py
+
+      - name: Docker availability
+        run: |
+          docker version
+          docker info
+
+      - name: Build trusted wrapper image
+        run: |
+          cat > /tmp/Dockerfile.casa <<'EOF'
+          FROM python:3.11-slim
+          RUN pip install --no-cache-dir pytest
+          EOF
+          docker build -f /tmp/Dockerfile.casa -t casa-python:ci /tmp
+
+      - name: Run isolated wrapper smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/casa-target
+          cat > /tmp/casa-target/test_smoke.py <<'PY'
+          def test_smoke():
+              assert True
+          PY
+          docker run --rm \
+            --network none \
+            --cap-drop ALL \
+            --pids-limit 64 \
+            --memory 512m \
+            --cpus 1.0 \
+            --read-only \
+            --mount type=bind,src=/tmp/casa-target,dst=/app,readonly \
+            --mount type=bind,src="$GITHUB_WORKSPACE/sandbox/runner_wrapper.py",dst=/bin/runner_wrapper.py,readonly \
+            --workdir /app \
+            casa-python:ci \
+            python /bin/runner_wrapper.py python -m pytest -q test_smoke.py | tee /tmp/casa_raw.log
+          grep -q -- '---BEGIN_G5P_RESULT---' /tmp/casa_raw.log
+          grep -q '"suite_status":"PASS"' /tmp/casa_raw.log
+
+      - name: Emit evidence payload
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, platform, subprocess
+          raw = pathlib.Path("/tmp/casa_raw.log").read_bytes()
+          env = {
+              "docker_version": subprocess.check_output(["docker","--version"], text=True).strip(),
+              "kernel_version": platform.release(),
+              "cpu_arch": platform.machine(),
+              "pinned_image_digest": subprocess.check_output(
+                  ["docker","image","inspect","casa-python:ci","--format={{.Id}}"], text=True
+              ).strip(),
+          }
+          env_fp = hashlib.sha256(json.dumps(env,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+          suite_sha = hashlib.sha256(b"test_smoke.py:v1").hexdigest()
+          payload = {
+              "target_sha": os.environ["GITHUB_SHA"],
+              "suite_sha": suite_sha,
+              "env_fp": env_fp,
+              "exit_code": 0,
+              "term_reason": "SUCCESS",
+              "raw_log_hash": hashlib.sha256(raw).hexdigest(),
+          }
+          material = json.dumps(payload,sort_keys=True,separators=(",",":")).encode()
+          payload["evi_hash"] = hashlib.sha256(material).hexdigest()
+          pathlib.Path("casa-evidence.json").write_text(json.dumps(payload,sort_keys=True,indent=2))
+          print(json.dumps(payload,sort_keys=True))
+          PY
+
+      - name: Upload evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: casa-giorgio-evidence
+          path: |
+            casa-evidence.json
+            /tmp/casa_raw.log
