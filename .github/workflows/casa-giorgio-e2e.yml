@@ -57,6 +57,7 @@ jobs:
             --memory 512m \
             --cpus 1.0 \
             --read-only \
+            --tmpfs /tmp:rw,noexec,nosuid,size=64m \
             --mount type=bind,src=/tmp/casa-target,dst=/app,readonly \
             --mount type=bind,src="$GITHUB_WORKSPACE/sandbox/runner_wrapper.py",dst=/bin/runner_wrapper.py,readonly \
             --workdir /app \
