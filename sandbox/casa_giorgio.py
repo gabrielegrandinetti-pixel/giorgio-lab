@@ -117,6 +117,7 @@ def docker_argv(image: str, source: Path, wrapper: Path, suite_argv: Sequence[st
         "--memory", "512m",
         "--cpus", "1.0",
         "--read-only",
+        "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m",
         "--mount", f"type=bind,src={source.resolve()},dst=/app,readonly",
         "--mount", f"type=bind,src={wrapper.resolve()},dst=/bin/runner_wrapper.py,readonly",
         "--workdir", "/app",
