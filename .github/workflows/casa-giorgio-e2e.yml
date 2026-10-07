@@ -22,6 +22,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare host test environment
+        run: python -m pip install --disable-pip-version-check pytest
+
       - name: Unit contracts
         run: python -m pytest -q tests/test_casa_giorgio.py
 
