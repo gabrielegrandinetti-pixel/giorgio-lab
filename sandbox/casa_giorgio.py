@@ -97,3 +97,52 @@ def seal_evidence(vault: Path, payload: dict) -> Path:
         raise
     os.chmod(path, 0o400)
     return path
+
+
+@dataclass(frozen=True)
+class SandboxResult:
+    status: str
+    term_reason: str
+    exit_code: int
+    raw_log: bytes
+
+
+def docker_argv(image: str, source: Path, wrapper: Path, suite_argv: Sequence[str]) -> list[str]:
+    # Docker receives argv directly. No shell interpolation is used.
+    return [
+        "docker", "run", "--rm",
+        "--network", "none",
+        "--cap-drop", "ALL",
+        "--pids-limit", "64",
+        "--memory", "512m",
+        "--cpus", "1.0",
+        "--read-only",
+        "--mount", f"type=bind,src={source.resolve()},dst=/app,readonly",
+        "--mount", f"type=bind,src={wrapper.resolve()},dst=/bin/runner_wrapper.py,readonly",
+        "--workdir", "/app",
+        image,
+        "python", "/bin/runner_wrapper.py",
+        *suite_argv,
+    ]
+
+
+def classify_run(returncode: int, output: bytes, timed_out: bool = False, oom_killed: bool = False) -> SandboxResult:
+    if timed_out:
+        return SandboxResult(INFRA_ERR, "TIMEOUT_KILL", returncode, output)
+    if oom_killed:
+        return SandboxResult(INFRA_ERR, "OOM_KILL", returncode, output)
+    begin = b"---BEGIN_G5P_RESULT---"
+    end = b"---END_G5P_RESULT---"
+    if returncode != 0 or begin not in output or end not in output:
+        return SandboxResult(INFRA_ERR, "RUNTIME_FAULT", returncode, output)
+    framed = output.split(begin, 1)[1].split(end, 1)[0].strip()
+    try:
+        marker = json.loads(framed)
+    except (ValueError, TypeError):
+        return SandboxResult(INFRA_ERR, "INVALID_RESULT_MARKER", returncode, output)
+    status = marker.get("suite_status")
+    if status == PASS:
+        return SandboxResult(PASS, "SUCCESS", returncode, output)
+    if status == FT:
+        return SandboxResult(FT, "TEST_FAILURE", returncode, output)
+    return SandboxResult(INFRA_ERR, "INVALID_RESULT_MARKER", returncode, output)
